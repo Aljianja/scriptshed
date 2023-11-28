@@ -46,10 +46,39 @@ install_docker() {
     esac
 }
 
+install_docker_compose() {
+    # Get latest docker-compose release
+    DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
+
+    # Check if the docker-compose release is available
+    if [ -z "$DOCKER_COMPOSE_VERSION"]; then
+        echo "Failed to fetch the latest version of Docker compose"
+        exit 1
+    fi
+
+    echo "Installing Docker Compose version: $DOCKER_COMPOSE_VERSION"
+
+    # Download Docker Compose
+    sudo curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-linux-x86_64" -o /usr/local/lib/docker/cli-plugins/docker-compose
+
+    # Apply executable permission to the binary
+    sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+    # Verify the installation
+    if ! command -v docker-compose &> /dev/null; then
+        echo "Docker Compose could not be installed. Please check the installation logs for errors."
+        exit 1
+    else
+        echo "Docker Compose installed successfully."
+        docker-compose version
+    fi
+}
+
 # Main script starts here
 detect_distro
 echo "Detected Distribution: $DISTRO, Version: $VER"
 install_docker
+install_docker_compose
 
 # Verify Docker installation
 if ! command -v docker &> /dev/null; then
