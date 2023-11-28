@@ -59,7 +59,7 @@ install_docker_compose() {
     echo "Installing Docker Compose version: $DOCKER_COMPOSE_VERSION"
 
     # Create docker config folder
-    sudo mkdir -p /usr/local/lib/docker
+    sudo mkdir -p /usr/local/lib/docker/cli-plugins
     # Download Docker Compose
     sudo curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-linux-x86_64" -o /usr/local/lib/docker/cli-plugins/docker-compose
 
