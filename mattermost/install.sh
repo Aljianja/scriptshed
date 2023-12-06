@@ -85,3 +85,6 @@ EOF'
     # Enable Mattermost server to start on boot
     sudo systemctl enable mattermost.service
 }
+
+install_mysql
+install_mattermost
