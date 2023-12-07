@@ -1,6 +1,11 @@
 #!/bin/bash
 
-source ./all-env.sh
+# Install Go
+GO_VERSION="1.18" # Specify the required Go version
+wget https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+export GOROOT=/usr/local/go
 
 # Install prerequisites for building Mattermost
 sudo apt-get update
@@ -8,7 +13,7 @@ sudo apt-get install -y git make
 
 # Clone the Mattermost source code
 git clone https://github.com/mattermost/mattermost.git
-cd mattermost
+cd ./mattermost/server/
 
 # Build Mattermost from source
 # This assumes there are instructions in the repository for building the server
