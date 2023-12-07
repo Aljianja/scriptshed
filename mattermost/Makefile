@@ -1,6 +1,10 @@
-.PHONY: all mysql mattermost nginx
+.PHONY: all set-env mysql mattermost nginx
 
-all: mysql mattermost nginx
+all: set-env mysql mattermost nginx
+
+set-env:
+	@echo "Setting enviroment variables..."
+	./env.sh
 
 mysql:
 	@echo "Setting up MySQL..."
