@@ -1,15 +1,15 @@
-.PHONY: all mysql-setup mattermost-setup nginx-setup
+.PHONY: all mysql mattermost nginx
 
-all: mysql-setup mattermost-setup nginx-setup
+all: mysql mattermost nginx
 
-mysql-setup:
+mysql:
 	@echo "Setting up MySQL..."
-	./mysql-setup.sh
+	./mysql.sh
 
-mattermost-setup: mysql-setup
+mattermost: mysql
 	@echo "Setting up Mattermost..."
-	./mattermost-setup.sh
+	./mattermost.sh
 
-nginx-setup: mattermost-setup
+nginx: mattermost
 	@echo "Setting up NGINX..."
-	./nginx-setup.sh
+	./nginx.sh
