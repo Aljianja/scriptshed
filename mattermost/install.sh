@@ -1,90 +1,44 @@
-
 #!/bin/bash
-source ./.env
 
-install_mysql() {
-    # Install MySQL
-    sudo apt-get update
-    sudo apt-get install mysql-server
+# Update System
+sudo apt update && sudo apt upgrade -y
 
+# Install MySQL
+sudo apt-get install mysql-server
+sudo mysql_secure_installation
 
-    sudo systemctl start mysql
-    sudo systemctl enable mysql
+# Set up MySQL database and user
+sudo mysql -u root -e "CREATE USER 'mmuser'@'%' IDENTIFIED BY 'mmuser-password';"
+sudo mysql -u root -e "CREATE DATABASE mattermost;"
+sudo mysql -u root -e "GRANT ALL PRIVILEGES ON mattermost.* TO 'mmuser'@'%';"
+sudo mysql -u root -e "FLUSH PRIVILEGES;"
 
+# Fetch the latest release version from GitHub
+latest_version=$(curl -s https://api.github.com/repos/mattermost/mattermost/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
 
-    ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+# Clone the repository
+git clone https://github.com/mattermost/mattermost.git
+cd mattermost-server
 
+# Checkout the latest version
+git checkout tags/$latest_version
 
-    MMUSER_PASSWORD=${MMUSER_PASSWORD}
+# Build the server
+make build-server
 
-    sudo mysql -u root -p$ROOT_PASSWORD <<EOF
+# Move the built server to /opt and create the data directory
+sudo mv mattermost /opt
+sudo mkdir /opt/mattermost/data
 
-    # Create Mattermost user and database
-    CREATE USER 'mmuser'@'%' IDENTIFIED BY '$MMUSER_PASSWORD';
-    CREATE DATABASE mattermost;
+# Set Up Mattermost User
+sudo useradd --system --user-group mattermost
+sudo chown -R mattermost:mattermost /opt/mattermost
+sudo chmod -R g+w /opt/mattermost
 
-    # Grant privileges to the Mattermost user
-    GRANT ALL PRIVILEGES ON mattermost.* TO 'mmuser'@'%';
+# Set Up Mattermost as a Service
+echo -e "[Unit]\nDescription=Mattermost\nAfter=network.target\nAfter=mysql.service\nBindsTo=mysql.service\n\n[Service]\nType=notify\nExecStart=/opt/mattermost/bin/mattermost\nTimeoutStartSec=3600\nKillMode=mixed\nRestart=always\nRestartSec=10\nWorkingDirectory=/opt/mattermost\nUser=mattermost\nGroup=mattermost\nLimitNOFILE=49152\n\n[Install]\nWantedBy=mysql.service" | sudo tee /lib/systemd/system/mattermost.service
 
-    # Exit MySQL
-    EXIT;
-EOF
-}
-
-install_mattermost() {
-    # Define the Mattermost version to install
-    MATTERMOST_VERSION="9.2.3"
-
-    # Download Mattermost Server tarball
-    wget https://releases.mattermost.com/${MATTERMOST_VERSION}/mattermost-${MATTERMOST_VERSION}-linux-amd64.tar.gz
-
-    # Extract the tarball
-    tar -xvzf mattermost*.gz
-
-    # Move Mattermost to the /opt directory
-    sudo mv mattermost /opt
-
-    # Create the storage folder for Mattermost
-    sudo mkdir /opt/mattermost/data
-
-    # Create a system user and group called 'mattermost'
-    sudo useradd --system --user-group mattermost
-
-    # Set the ownership and permissions
-    sudo chown -R mattermost:mattermost /opt/mattermost
-    sudo chmod -R g+w /opt/mattermost
-
-    # Create a systemd unit file for Mattermost
-    sudo bash -c 'cat <<EOF > /lib/systemd/system/mattermost.service
-[Unit]
-Description=Mattermost
-After=network.target
-
-[Service]
-Type=notify
-ExecStart=/opt/mattermost/bin/mattermost
-TimeoutStartSec=3600
-KillMode=mixed
-Restart=always
-RestartSec=10
-WorkingDirectory=/opt/mattermost
-User=mattermost
-Group=mattermost
-LimitNOFILE=49152
-
-[Install]
-WantedBy=multi-user.target
-EOF'
-
-    # Reload systemd to apply new unit file
-    sudo systemctl daemon-reload
-
-    # Start Mattermost server
-    sudo systemctl start mattermost
-
-    # Enable Mattermost server to start on boot
-    sudo systemctl enable mattermost.service
-}
-
-install_mysql
-install_mattermost
+# Start Mattermost Service
+sudo systemctl daemon-reload
+sudo systemctl start mattermost.service
+sudo systemctl enable mattermost.service
