@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source ./all-env.sh
-
 # Install NGINX
 sudo apt-get install nginx
 

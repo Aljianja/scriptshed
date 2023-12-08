@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source ./all-env.sh
-
 # Install MySQL
 sudo apt-get install mysql-server
 sudo mysql_secure_installation
