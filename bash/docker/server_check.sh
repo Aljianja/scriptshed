@@ -133,7 +133,7 @@ for process in "${web_processes[@]}"; do
     if [[ -n $pid ]]; then
         echo "Process: $process (PID: $pid)"
         if command -v lsof &> /dev/null; then
-            ports=$(lsof -Pan -p $pid -i | grep -E 'LISTEN|UDP')
+            ports=$(lsof -Pan -p $pid -iTCP -sTCP:LISTEN)
             if [[ -n $ports ]]; then
                 echo "$ports"
             else
