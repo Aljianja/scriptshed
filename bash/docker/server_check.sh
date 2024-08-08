@@ -11,6 +11,8 @@ echo ""
 
 # List specific installed packages related to web development
 echo "Installed Packages (Web Development Related):"
+echo "========================="
+echo ""
 web_packages=("apache2" "httpd" "nginx" "mysql-server" "postgresql" "php" "python" "nodejs" "ruby" "java-1.8.0-openjdk" "java-11-openjdk" "tomcat" "php-fpm" "perl" "django" "flask" "rails" "express" "spring")
 
 if [[ "$OS" =~ "Ubuntu" || "$OS" =~ "Debian" ]]; then
@@ -28,17 +30,23 @@ echo ""
 
 # List running processes related to web development
 echo "Running Processes (Web Development Related):"
+echo "========================="
+echo ""
 web_processes=("apache2" "httpd" "nginx" "mysqld" "postgres" "php-fpm" "python" "node" "ruby" "java" "tomcat" "perl" "django" "flask" "rails" "express" "spring")
 ps aux | grep -E "$(IFS=\|; echo "${web_processes[*]}")" | grep -v grep
 echo ""
 
 # List active services related to web development
 echo "Active Services (Web Development Related):"
+echo "========================="
+echo ""
 systemctl list-units --type=service --state=running | grep -E "$(IFS=\|; echo "${web_processes[*]}")"
 echo ""
 
 # Check open ports using netstat, ss, or lsof
 echo "Open Ports:"
+echo "========================="
+echo ""
 if command -v netstat &> /dev/null; then
     netstat -tuln
 elif command -v ss &> /dev/null; then
@@ -52,6 +60,8 @@ echo ""
 
 # Check if web-related services are listening on ports
 echo "Web-Related Services Listening on Ports:"
+echo "========================="
+echo ""
 for process in "${web_processes[@]}"; do
     if command -v netstat &> /dev/null; then
         netstat -tuln | grep $process
@@ -65,6 +75,8 @@ echo ""
 
 # Check for available web servers and list websites
 echo "Web Servers and Websites:"
+echo "========================="
+echo ""
 web_servers=("apache2" "httpd" "nginx")
 for server in "${web_servers[@]}"; do
     if command -v $server &> /dev/null; then
@@ -114,18 +126,32 @@ fi
 
 # Check ports used by specific processes using lsof and fuser
 echo "Ports Used by Specific Processes:"
+echo "========================="
+echo ""
 for process in "${web_processes[@]}"; do
     pid=$(pgrep -f $process)
     if [[ -n $pid ]]; then
         echo "Process: $process (PID: $pid)"
         if command -v lsof &> /dev/null; then
-            lsof -Pan -p $pid -i
+            ports=$(lsof -Pan -p $pid -i | grep -E 'LISTEN|UDP')
+            if [[ -n $ports ]]; then
+                echo "$ports"
+            else
+                echo "No ports found for $process (PID: $pid)"
+            fi
         elif command -v fuser &> /dev/null; then
-            fuser -v -n tcp -n udp -p $pid
+            ports=$(fuser -v -n tcp -n udp -p $pid 2>&1 | grep -v "no such file")
+            if [[ -n $ports ]]; then
+                echo "$ports"
+            else
+                echo "No ports found for $process (PID: $pid)"
+            fi
         else
             echo "Neither lsof nor fuser is installed."
         fi
         echo ""
+    else
+        echo "Process $process is not running."
     fi
 done
 
