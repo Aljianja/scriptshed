@@ -3,6 +3,8 @@
 # Detect Linux distribution
 OS=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
 
+echo ""
+echo "========================="
 echo "Server Information Summary"
 echo "========================="
 echo ""
@@ -27,17 +29,38 @@ echo ""
 # List running processes related to web development
 echo "Running Processes (Web Development Related):"
 web_processes=("apache2" "httpd" "nginx" "mysqld" "postgres" "php-fpm" "python" "node" "ruby" "java" "tomcat" "perl" "django" "flask" "rails" "express" "spring")
-ps aux | grep -E "${web_processes[*]}" | grep -v grep
+ps aux | grep -E "$(IFS=\|; echo "${web_processes[*]}")" | grep -v grep
 echo ""
 
 # List active services related to web development
 echo "Active Services (Web Development Related):"
-systemctl list-units --type=service --state=running | grep -E "${web_processes[*]}"
+systemctl list-units --type=service --state=running | grep -E "$(IFS=\|; echo "${web_processes[*]}")"
 echo ""
 
-# Check open ports
+# Check open ports using netstat, ss, or lsof
 echo "Open Ports:"
-netstat -tuln
+if command -v netstat &> /dev/null; then
+    netstat -tuln
+elif command -v ss &> /dev/null; then
+    ss -tuln
+elif command -v lsof &> /dev/null; then
+    lsof -i -P -n | grep LISTEN
+else
+    echo "Neither netstat, ss, nor lsof is installed."
+fi
+echo ""
+
+# Check if web-related services are listening on ports
+echo "Web-Related Services Listening on Ports:"
+for process in "${web_processes[@]}"; do
+    if command -v netstat &> /dev/null; then
+        netstat -tuln | grep $process
+    elif command -v ss &> /dev/null; then
+        ss -tuln | grep $process
+    elif command -v lsof &> /dev/null; then
+        lsof -i -P -n | grep LISTEN | grep $process
+    fi
+done
 echo ""
 
 # Check for available web servers and list websites
