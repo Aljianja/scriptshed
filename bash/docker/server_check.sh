@@ -84,6 +84,20 @@ for server in "${web_servers[@]}"; do
     fi
 done
 
+# Check for running Node.js applications managed by pm2
+if command -v pm2 &> /dev/null; then
+    echo "Node.js Applications Managed by pm2:"
+    pm2 list
+    echo ""
+fi
+
+# Check for running applications managed by supervisor
+if command -v supervisorctl &> /dev/null; then
+    echo "Applications Managed by supervisor:"
+    supervisorctl status
+    echo ""
+fi
+
 # Docker containers
 if command -v docker &> /dev/null; then
     echo "Docker Containers:"
@@ -97,5 +111,22 @@ if command -v kubectl &> /dev/null; then
     kubectl get pods --all-namespaces
     echo ""
 fi
+
+# Check ports used by specific processes using lsof and fuser
+echo "Ports Used by Specific Processes:"
+for process in "${web_processes[@]}"; do
+    pid=$(pgrep -f $process)
+    if [[ -n $pid ]]; then
+        echo "Process: $process (PID: $pid)"
+        if command -v lsof &> /dev/null; then
+            lsof -Pan -p $pid -i
+        elif command -v fuser &> /dev/null; then
+            fuser -v -n tcp -n udp -p $pid
+        else
+            echo "Neither lsof nor fuser is installed."
+        fi
+        echo ""
+    fi
+done
 
 echo "Summary report complete."
